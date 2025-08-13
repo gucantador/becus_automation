@@ -1,0 +1,22 @@
+{
+    "id": 0,
+    "formaDeRegistro": 1,
+    "vinculoFormaDeRegistro": null,
+    "vinculoComplementacao": null,
+    "participacaoTecnica": 1,
+    "vinculoParticipacaoTecnica": null,
+    "vinculoEmpreendimento": null,
+    "relatorioDeFiscalizacao": null,
+    "apelido": null,
+    "finalidade": null,
+    "profissional": 770778,
+    "tipo": 1,
+    "situacao": 1,
+    "funcionario": 999997,
+    "subTipo": 1,
+    "observacoes": null,
+    "acessibilidade": null,
+    "entidadeDeClasse": null,
+    "empresa": 778812,
+    "filial": null
+}
