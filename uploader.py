@@ -5,6 +5,17 @@ from utils import generate_log
 import os
 import sys
 
+import logging
+import traceback
+
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+)
+
+log = logging.getLogger(__name__)
+
 
 def upload():
 
@@ -21,9 +32,14 @@ def upload():
 
     parent_folder = get_parent_folder(path)
     becus_code = get_becus_code(parent_folder)
+
     
 
     folder_id_drive = find_folder_by_name(parent_folder, parent_folder_id=None)
+
+    if folder_id_drive is None:
+         print("Pasta não encontrada no Google Drive.")
+         return
 
     folder_contents = list_folder_contents(folder_id_drive)
 
@@ -53,6 +69,7 @@ def upload():
             except (IndexError, ValueError):
                pass
 
+
     new_folder_id = create_folder(f"upload_{higher + 1}", folder_id_drive)
 
     
@@ -64,5 +81,11 @@ def upload():
     return f'https://drive.google.com/drive/u/4/folders/{new_folder_id}', f'version: {higher + 1}'
 
 
-print(upload())
-input("Aperte enter para encerrar")
+
+try:
+    print(upload())
+    input("Aperte enter para encerrar")
+except Exception as e:
+    log.error(f"Erro ao executar o processo: {e}")
+    log.error(traceback.format_exc())  # Mostra a stack trace completa
+input("Pressione Enter para sair...")
