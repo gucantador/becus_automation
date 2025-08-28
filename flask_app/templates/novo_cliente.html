@@ -1,0 +1,246 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8 col-lg-6">
+        <div class="card p-4">
+            <h3 class="mb-4 text-center text-primary">Cadastrar Novo Cliente</h3>
+            
+            <form id="clienteForm">
+                <div class="mb-3">
+                    <label class="form-label">Tanque</label>
+                    <input list="tanques-list" name="tanque" class="form-control" required>
+                        <datalist id="tanques-list">
+                            <option value="P190">
+                            <option value="P1000H">
+                            <option value="P1000V">
+                            <option value="P500H">
+                            <option value="P500V">
+                            <option value="P1000H">
+                            <option value="P1000V">
+                            <option value="P2000V">
+                            <option value="P2000H">
+                            <option value="P20000H">
+                            <option value="P20000V">
+                            <option value="P60000V">
+                            <option value="P60000H">
+                            <!-- Adicione mais tanques comuns se quiser -->
+                        </datalist>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Nome</label>
+                    <input type="text" name="name" class="form-control" required>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">CNPJ</label>
+                    <input type="text" name="cnpj" class="form-control" required>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Quantidade</label>
+                    <input type="text" name="quantidade" class="form-control" required>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Unidade</label>
+                    <div class="input-group">
+                        <input type="text" id="unidade" name="unidade" class="form-control" readonly required>
+                        <button id="selectBtn" type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#modalUnidades">
+                            Selecionar
+                        </button>
+                    </div>
+                    <!-- id da unidade (para o backend) -->
+                    <input type="hidden" id="unidade_id" name="unidade_id">
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Capex</label>
+                    <input type="text" name="capex" class="form-control">
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Cidade</label>
+                    <input type="text" name="cidade" class="form-control" required>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Bairro</label>
+                    <input type="text" name="bairro" class="form-control" required>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Estado</label>
+                    <input type="text" name="estado" maxlength="2" class="form-control" required>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">CEP</label>
+                    <input type="text" id="cep" name="CEP" class="form-control" required>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Número</label>
+                    <input type="text" name="numero" class="form-control">
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Logradouro</label>
+                    <input type="text" id="logradouro" name="logradouro" class="form-control">
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Criar pasta</label>
+                    <input type="checkbox" id="criar-pasta" name="criar-pasta" class="form-check-input">
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Link Google Drive</label>
+                    <input type="url" id="link_google_drive" name="link_google_drive" class="form-control">
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Observações</label>
+                    <textarea name="observacoes" class="form-control" rows="3"></textarea>
+                </div>
+
+                <div class="d-grid">
+                    <button type="submit" class="btn btn-primary btn-lg">Salvar Cliente</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Unidades -->
+<div class="modal fade" id="modalUnidades" tabindex="-1" aria-labelledby="modalUnidadesLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-primary">
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title" id="modalUnidadesLabel">Selecionar Unidade</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fechar"></button>
+      </div>
+      <div class="modal-body">
+        <ul class="list-group" id="listaUnidades">
+          <!-- Unidades serão carregadas via JS -->
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+async function carregarUnidades() {
+  try {
+    const response = await fetch("/unidades");
+    const data = await response.json();
+    const lista = document.getElementById("listaUnidades");
+    lista.innerHTML = "";
+
+    data.forEach(unidade => {
+      const li = document.createElement("li");
+      li.textContent = unidade.name; // usa o campo "name"
+      li.classList.add("list-group-item", "list-group-item-action");
+      li.style.cursor = "pointer";
+
+      li.addEventListener("click", () => {
+        // preenche o input visível e guarda o id no hidden
+        document.getElementById("unidade").value = unidade.name;
+        document.getElementById("unidade_id").value = unidade.id;
+
+        const modalEl = document.getElementById("modalUnidades");
+        const modalInstance = bootstrap.Modal.getOrCreateInstance(modalEl);
+        modalInstance.hide();
+      });
+
+      lista.appendChild(li);
+    });
+  } catch (error) {
+    console.error("Erro ao carregar unidades:", error);
+  }
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  // abre o modal e carrega as unidades
+  document.getElementById("selectBtn").addEventListener("click", carregarUnidades);
+
+  // envio do formulário via fetch (JSON)
+  document.getElementById("clienteForm").addEventListener("submit", async function(e) {
+    e.preventDefault();
+    const formData = new FormData(this);
+    const data = Object.fromEntries(formData.entries());
+
+    data["criar-pasta"] = document.getElementById("criar-pasta").checked;
+
+
+    try {
+      const response = await fetch("{{ url_for('create_cliente') }}", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data)
+      });
+
+      
+      if (response.ok) {
+    const result = await response.json();
+    if (result.success && result.redirect_url) {
+        window.location.href = result.redirect_url; // faz o redirecionamento
+    }
+} else {
+        alert("Erro: " + result.error);
+      }
+    } catch (err) {
+      alert("Erro na requisição: " + err.message);
+    }
+  });
+
+  // --- BUSCA AUTOMÁTICA POR CEP (ViaCEP) ---
+  const cepInput = document.getElementById("cep");
+  cepInput.addEventListener("blur", async function() {
+    const cep = this.value.replace(/\D/g, "");
+    if (!cep) return;
+
+    // validação simples (8 dígitos)
+    if (cep.length !== 8) {
+      alert("CEP inválido. Use 8 dígitos.");
+      return;
+    }
+
+    try {
+      const res = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
+      const data = await res.json();
+
+      if (!data.erro) {
+        document.querySelector("input[name='logradouro']").value = data.logradouro || "";
+        document.querySelector("input[name='cidade']").value = data.localidade || "";
+        document.querySelector("input[name='bairro']").value = data.bairro || "";
+        const uf = (data.uf || "").toUpperCase();
+        document.querySelector("input[name='estado']").value = uf;
+      } else {
+        alert("CEP não encontrado. Preencha manualmente.");
+      }
+    } catch (err) {
+      console.error("Erro ao buscar CEP:", err);
+    }
+  });
+});
+    const checkbox = document.getElementById("criar-pasta");
+    const inputLink = document.getElementById("link_google_drive");
+
+    function toggleLinkField() {
+        if (checkbox.checked) {
+            inputLink.disabled = true;   // fica cinza
+            inputLink.value = "";        // limpa valor se já tinha algo
+        } else {
+            inputLink.disabled = false;  // reabilita
+        }
+    }
+
+    // roda ao carregar a página
+    toggleLinkField();
+
+    // roda sempre que o checkbox mudar
+    checkbox.addEventListener("change", toggleLinkField);
+</script>
+{% endblock %}

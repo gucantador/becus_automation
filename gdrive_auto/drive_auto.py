@@ -13,6 +13,7 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 from google.auth.transport.requests import Request
 import os
+import re
 
 
 
@@ -267,6 +268,56 @@ def list_folder_contents(folder_id):
 
     print(f"📄 {len(items)} items found in folder {folder_id}")
     return items
+
+def create_next_folder(unidade: str, tanque: str, quantidade: int, name:str) -> dict:
+    """
+    Cria a próxima pasta no padrão XYZ.AAAAA.BBBBBB.C.0 e retorna os IDs/link.
+
+    
+    """
+
+    #TEM QUE CADASTRAR A CES, MELHOR FAZER PELA API
+    parent_folder_id = get_drive_folder_id(unidade) if get_drive_folder_id(unidade) else None
+
+    # 1️⃣ Listar todas as pastas dentro da unidade
+    folders = list_folders_with_prefix(parent_folder_id, prefix=unidade)
+    
+    # 2️⃣ Filtrar pastas que correspondem ao padrão do código
+    pattern = re.compile(rf"{re.escape(unidade)}\.(\d{{5}})\..+\.\d+\.0")
+    
+    codes = []
+    for f in folders:
+        match = pattern.match(f['name'])
+        if match:
+            codes.append(int(match.group(1)))
+    
+    # 3️⃣ Determinar o próximo código
+    next_code = max(codes) + 1 if codes else 1
+    code_str = str(next_code).zfill(5)
+    
+    # 4️⃣ Extrair apenas o número do tanque
+    tanque_num = re.search(r'\d+', tanque)
+    tanque_num_str = tanque_num.group(0) if tanque_num else tanque
+    tanque_num_str = tanque_num_str.zfill(6)
+    # 5️⃣ Montar o nome da pasta
+    folder_name = f"{unidade}.{code_str}.{tanque_num_str}.{quantidade}.0 - {name}"
+    
+    # 6️⃣ Criar a pasta no Drive
+    new_folder_id = create_folder(folder_name, parent_folder_id)
+    
+    # 7️⃣ Criar subpasta "Fotos"
+    photos_folder_id = create_folder("Fotos", new_folder_id)
+    
+    # 8️⃣ Retorno customizado
+    return {
+        "becus_id": code_str,              # O código sequencial gerado
+        "link_google_drive": f"https://drive.google.com/drive/folders/{new_folder_id}",
+        "folder_name": folder_name,
+        "folder_id": new_folder_id,
+        "photos_folder_id": photos_folder_id
+    }
+    
+
 
 def list_all_folders():
     service = get_drive_service()
