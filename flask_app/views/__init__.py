@@ -1,1 +1,1 @@
-from . import cliente
+from . import cliente, projeto

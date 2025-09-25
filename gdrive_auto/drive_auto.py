@@ -299,8 +299,9 @@ def create_next_folder(unidade: str, tanque: str, quantidade: int, name:str) -> 
     tanque_num = re.search(r'\d+', tanque)
     tanque_num_str = tanque_num.group(0) if tanque_num else tanque
     tanque_num_str = tanque_num_str.zfill(6)
+    folder_code = f"{unidade}.{code_str}.{tanque_num_str}.{quantidade}.0"
     # 5️⃣ Montar o nome da pasta
-    folder_name = f"{unidade}.{code_str}.{tanque_num_str}.{quantidade}.0 - {name}"
+    folder_name = f"{folder_code} - {name}"
     
     # 6️⃣ Criar a pasta no Drive
     new_folder_id = create_folder(folder_name, parent_folder_id)
@@ -310,7 +311,7 @@ def create_next_folder(unidade: str, tanque: str, quantidade: int, name:str) -> 
     
     # 8️⃣ Retorno customizado
     return {
-        "becus_id": code_str,              # O código sequencial gerado
+        "becus_id": folder_code,              # O código sequencial gerado
         "link_google_drive": f"https://drive.google.com/drive/folders/{new_folder_id}",
         "folder_name": folder_name,
         "folder_id": new_folder_id,

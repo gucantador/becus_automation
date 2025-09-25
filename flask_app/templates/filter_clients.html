@@ -1,0 +1,223 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-10">
+        <div class="card p-4">
+            <h3 class="mb-4 text-center text-primary">Search Clients</h3>
+
+            <!-- Filtros -->
+            <div class="mb-3">
+                <!-- Modal Unidades -->
+                <button class="btn btn-secondary" data-bs-toggle="modal" data-bs-target="#modalUnidades">
+                    Selecionar Unidades
+                </button>
+
+                <!-- Inputs -->
+                <input type="text" id="filtroNome" placeholder="Nome" class="form-control mt-2">
+                <input type="text" id="filtroBecus" placeholder="Becus ID" class="form-control mt-2">
+                <input type="text" id="filtroCidade" placeholder="Cidade" class="form-control mt-2">
+                <input type="text" id="filtroEstado" placeholder="Estado" class="form-control mt-2">
+                <input type="text" id="filtroTanque" placeholder="Tanque" class="form-control mt-2">
+                
+
+                <!-- Preview -->
+                <div id="previewFiltros" class="mt-2"></div>
+
+                <!-- Botão remover filtros -->
+                <div>
+                    <button type="button" id="removerFiltros" class="btn btn-outline-danger btn-sm mt-2 mb-2 d-none">
+                        Remover filtros
+                    </button>
+                </div>
+            </div>
+
+            <!-- Campo hidden para guardar unidades -->
+            <input type="hidden" id="unidadesSelecionadas">
+
+            <!-- Botão buscar -->
+            <div class="mb-3">
+                <button id="searchBtn" class="btn btn-primary w-100">Buscar Clientes</button>
+            </div>
+
+            <div class="mb-3">
+    <a href="{{ url_for('novo_cliente') }}" class="btn btn-primary w-100">
+        Cadastrar Cliente
+    </a>
+</div>
+
+            <!-- Resultados -->
+            <div id="results" class="table-responsive"></div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Unidades -->
+<div class="modal fade" id="modalUnidades" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Selecionar Unidades</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <ul id="listaUnidades" class="list-group"></ul>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-primary" id="confirmarUnidades">Confirmar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+async function fetchClients() {
+    const unidades = document.getElementById("unidadesSelecionadas").value;
+    const nome = document.getElementById("filtroNome").value.trim();
+    const becus = document.getElementById("filtroBecus").value.trim();
+    const cidade = document.getElementById("filtroCidade").value.trim();
+    const estado = document.getElementById("filtroEstado").value.trim();
+    const tanque = document.getElementById("filtroTanque").value.trim();
+
+    const queryParams = new URLSearchParams();
+    if (unidades) queryParams.append("unidade", unidades);
+    if (nome) queryParams.append("name", nome);
+    if (becus) queryParams.append("becus_id", becus);
+    if (cidade) queryParams.append("cidade", cidade);
+    if (estado) queryParams.append("estado", estado);
+    if (tanque) queryParams.append("tanque", tanque);
+
+    try {
+        const res = await fetch(`/api/clientes?${queryParams.toString()}`);
+        const data = await res.json();
+
+        const resultsDiv = document.getElementById("results");
+        if (!data.length) {
+            resultsDiv.innerHTML = `<p class="text-center mt-3">Nenhum cliente encontrado.</p>`;
+            return;
+        }
+
+        let tableHTML = `
+            <table class="table table-striped">
+                <thead class="table-primary">
+                    <tr>
+                        <th>Becus ID</th>
+                        <th>Nome</th>
+                        <th>Unidade</th>
+                        <th>Tanque</th>
+                        <th>Quantidade</th>
+                        <th>Cidade</th>
+                        <th>Estado</th>
+                        <th>Link do Drive</th>
+                    </tr>
+                </thead>
+                <tbody>
+        `;
+
+        data.forEach(client => {
+    tableHTML += `
+        <tr>
+            <td>${client.becus_id}</td>
+            <td>
+              <a href="/system/cliente/${client.id}" class="text-decoration-none">
+                ${client.name}
+              </a>
+            </td>
+            <td>${client.unidade}</td>
+            <td>${client.tanque}</td>
+            <td>${client.quantidade}</td>
+            <td>${client.cidade}</td>
+            <td>${client.estado}</td>
+            <td><a href="${client.link_google_drive}" target="_blank">Open</a></td>
+        </tr>
+    `;
+});
+
+        tableHTML += `</tbody></table>`;
+        resultsDiv.innerHTML = tableHTML;
+        console.log("Clientes carregados:", data);
+
+    } catch (err) {
+        console.error("Erro ao buscar clientes:", err);
+        document.getElementById("results").innerHTML = `<p class="text-danger text-center mt-3">Erro ao buscar dados</p>`;
+    }
+}
+
+// Evento botão buscar
+document.getElementById("searchBtn").addEventListener("click", fetchClients);
+
+// Carregar unidades no modal
+async function carregarUnidades() {
+    try {
+        const response = await fetch("/unidades");
+        const data = await response.json();
+        const lista = document.getElementById("listaUnidades");
+        lista.innerHTML = "";
+        data.forEach(unidade => {
+            const li = document.createElement("li");
+            li.classList.add("list-group-item");
+            li.innerHTML = `
+                <input type="checkbox" class="form-check-input me-2 unidade-check" value="${unidade.name}">
+                ${unidade.name}
+            `;
+            lista.appendChild(li);
+        });
+    } catch (error) {
+        console.error("Erro ao carregar unidades:", error);
+    }
+}
+
+// Confirmar seleção de unidades
+document.getElementById("confirmarUnidades").addEventListener("click", () => {
+    const selecionados = Array.from(document.querySelectorAll(".unidade-check:checked")).map(el => el.value);
+    document.getElementById("unidadesSelecionadas").value = selecionados.join(",");
+
+    updatePreview();
+    const modalEl = document.getElementById("modalUnidades");
+    const modalInstance = bootstrap.Modal.getInstance(modalEl);
+    modalInstance.hide();
+});
+
+// Atualiza preview e botão remover filtros
+function updatePreview() {
+    const unidades = document.getElementById("unidadesSelecionadas").value.split(",").filter(u => u);
+    const nome = document.getElementById("filtroNome").value.trim();
+    const becus = document.getElementById("filtroBecus").value.trim();
+    const cidade = document.getElementById("filtroCidade").value.trim();
+    const estado = document.getElementById("filtroEstado").value.trim();
+    const tanque = document.getElementById("filtroTanque").value.trim();
+
+    const preview = document.getElementById("previewFiltros");
+    let badges = [];
+    if (unidades.length) unidades.forEach(u => badges.push(`<span class="badge bg-primary me-1">${u}</span>`));
+    if (nome) badges.push(`<span class="badge bg-dark me-1">Nome: ${nome}</span>`);
+    if (becus) badges.push(`<span class="badge bg-secondary me-1">Becus ID: ${becus}</span>`);
+    if (cidade) badges.push(`<span class="badge bg-success me-1">Cidade: ${cidade}</span>`);
+    if (estado) badges.push(`<span class="badge bg-warning me-1">Estado: ${estado}</span>`);
+    if (tanque) badges.push(`<span class="badge bg-info me-1">Tanque: ${tanque}</span>`);
+    preview.innerHTML = badges.join("");
+
+    // Mostra botão remover filtros se houver algum
+    document.getElementById("removerFiltros").classList.toggle("d-none", badges.length === 0);
+}
+
+// Evento remover todos os filtros
+document.getElementById("removerFiltros").addEventListener("click", () => {
+    document.getElementById("unidadesSelecionadas").value = "";
+    document.getElementById("filtroNome").value = "";
+    document.getElementById("filtroBecus").value = "";
+    document.getElementById("filtroCidade").value = "";
+    document.getElementById("filtroEstado").value = "";
+    document.getElementById("filtroTanque").value = "";
+    updatePreview();
+});
+
+// Atualiza preview automaticamente ao digitar nos filtros
+["filtroNome","filtroBecus","filtroCidade","filtroEstado","filtroTanque"].forEach(id => {
+    document.getElementById(id).addEventListener("input", updatePreview);
+});
+
+// Carregar unidades ao abrir modal
+document.getElementById("modalUnidades").addEventListener("show.bs.modal", carregarUnidades);
+</script>
+{% endblock %}

@@ -1,4 +1,4 @@
-from flask import jsonify, request, Blueprint, request, jsonify, redirect, url_for
+from flask import jsonify, request, Blueprint, request, jsonify, redirect, session, url_for
 
 from gdrive_auto.drive_auto import upload_file, create_folder, create_next_folder
 
@@ -16,8 +16,12 @@ from ..models import db, Cliente
 # -------------------------------
 # POST - Cadastrar Cliente
 # -------------------------------
+
 @app.route("/clientes", methods=["POST"])
 def create_cliente():
+
+
+
     data = request.get_json()
     print(data)
     next_folder = create_next_folder(data.get("unidade"), data.get('tanque'), int(data.get("quantidade")), data.get("name"))
@@ -98,3 +102,31 @@ def get_clientes_by_name(name):
 def get_cliente_by_becus(becus_id):
     cliente = Cliente.query.filter_by(becus_id=becus_id).first_or_404()
     return jsonify(cliente.to_dict(include_projetos=True))
+
+
+
+
+@app.route("/api/clientes", methods=["GET"])
+def get_clientes():
+    # Pegando os filtros da query string
+    filters = request.args  # ex: /api/clientes?cidade=São Paulo&tanque=P190
+    query = Cliente.query
+
+    if filters:
+        # Para cada parâmetro passado na query string, adiciona um filtro
+        for key, value in filters.items():
+            if hasattr(Cliente, key) and value.strip():
+                # Busca parcial usando ilike para strings
+                column_attr = getattr(Cliente, key)
+                if isinstance(column_attr.type, db.String):
+                    query = query.filter(column_attr.ilike(f"%{value}%"))
+                else:
+                    query = query.filter(column_attr == value)
+
+    # Executa a query
+    clientes = query.all()
+
+    # Converte para lista de dicts
+    result = [c.to_dict() for c in clientes]
+    return jsonify(result)
+

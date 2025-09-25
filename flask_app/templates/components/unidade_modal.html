@@ -1,0 +1,71 @@
+<!-- Input readonly e botão -->
+<div class="d-flex gap-2 mb-3">
+  <input type="text" id="filtroUnidade" placeholder="Selecione uma unidade" class="form-control" readonly style="height: 45px;">
+  <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalUnidades" style="width: 250px; height: 45px;">
+    Selecionar Unidade
+  </button>
+</div>
+
+<!-- Modal -->
+<div class="modal fade" id="modalUnidades" tabindex="-1" aria-labelledby="modalUnidadesLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-primary">
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title" id="modalUnidadesLabel">Selecionar Unidade</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fechar"></button>
+      </div>
+      <div class="modal-body">
+        <ul class="list-group" id="listaUnidades"></ul>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-success" id="btnSelecionarUnidades">Selecionar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+window.unidade_filtered = [];
+
+// Carregar unidades no modal
+async function carregarUnidades() {
+    try {
+        const response = await fetch("/unidades");
+        const data = await response.json();
+        const lista = document.getElementById("listaUnidades");
+        lista.innerHTML = "";
+
+        data.forEach(unidade => {
+            const li = document.createElement("li");
+            li.classList.add("list-group-item");
+
+            li.innerHTML = `
+                <input type="checkbox" class="form-check-input me-2 unidade-check" value="${unidade.name}">
+                ${unidade.name}
+            `;
+
+            lista.appendChild(li);
+        });
+    } catch (error) {
+        console.error("Erro ao carregar unidades:", error);
+    }
+}
+
+// Ao abrir modal, carregar unidades
+document.getElementById("modalUnidades").addEventListener("show.bs.modal", carregarUnidades);
+
+// Botão Selecionar dentro do modal
+document.getElementById("btnSelecionarUnidades").addEventListener("click", () => {
+    const checkedBoxes = document.querySelectorAll(".unidade-check:checked");
+    const unidadesSelecionadas = Array.from(checkedBoxes).map(cb => cb.value);
+
+    // Atualiza a variável global
+    window.unidade_filtered = unidadesSelecionadas;
+
+    // Atualiza o input com o texto das unidades selecionadas
+    document.getElementById("filtroUnidade").value = unidadesSelecionadas.join(", ");
+
+    // Fecha o modal
+    bootstrap.Modal.getInstance(document.getElementById("modalUnidades")).hide();
+});
+</script>

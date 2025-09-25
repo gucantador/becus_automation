@@ -9,6 +9,7 @@ app = Flask(__name__) # creates a flask app with the name of the file as a param
 CORS(app)
 # app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get("DATABASE_URI")
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///site.db'
+app.secret_key = "secret_key" 
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
 

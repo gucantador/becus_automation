@@ -1,0 +1,126 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+
+  <!-- Header com Nome e Link -->
+  <div class="row mb-4">
+    <div class="col text-center">
+      <h2 id="clienteNome" class="text-primary"></h2>
+      <a id="clienteDrive" href="#" target="_blank" class="btn btn-outline-secondary btn-sm">
+        Abrir no Google Drive
+      </a>
+    </div>
+  </div>
+
+  <!-- Informações do Cliente -->
+  <div class="row justify-content-center">
+    <div class="col-md-8">
+      <div class="card border-primary mb-4">
+        <div class="card-header bg-primary text-white">Informações do Cliente</div>
+        <div class="card-body">
+          <dl class="row mb-0">
+            <dt class="col-sm-4">Unidade</dt>
+            <dd class="col-sm-8" id="clienteUnidade"></dd>
+
+            <dt class="col-sm-4">Capex</dt>
+            <dd class="col-sm-8" id="clienteCapex"></dd>
+
+            <dt class="col-sm-4">Cidade</dt>
+            <dd class="col-sm-8" id="clienteCidade"></dd>
+
+            <dt class="col-sm-4">Estado</dt>
+            <dd class="col-sm-8" id="clienteEstado"></dd>
+
+            <dt class="col-sm-4">CEP</dt>
+            <dd class="col-sm-8" id="clienteCep"></dd>
+
+            <dt class="col-sm-4">Número</dt>
+            <dd class="col-sm-8" id="clienteNumero"></dd>
+
+            <dt class="col-sm-4">Bairro</dt>
+            <dd class="col-sm-8" id="clienteBairro"></dd>
+
+            <dt class="col-sm-4">CNPJ</dt>
+            <dd class="col-sm-8" id="clienteCnpj"></dd>
+          </dl>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Projetos -->
+  <div class="row justify-content-center">
+    <div class="col-md-8">
+      <div class="card border-success">
+        <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+          <span>Projetos</span>
+          <a href="/system/cliente/{{ cliente_id }}/novo_projeto" class="btn btn-light btn-sm" id="btnCriarProjeto">
+            Criar Projeto
+            </a>
+        </div>
+        <div class="card-body">
+          <ul class="list-group" id="listaProjetos">
+            <!-- Projetos serão carregados via JS -->
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", async () => {
+  const clienteId = "{{ cliente_id }}";
+  try {
+    const response = await fetch(`/clientes/${clienteId}`);
+    const cliente = await response.json();
+
+    // Preenche os campos
+    document.getElementById("clienteNome").textContent = cliente.name;
+    document.getElementById("clienteDrive").href = cliente.link_google_drive || "#";
+    document.getElementById("clienteUnidade").textContent = cliente.unidade || "-";
+    document.getElementById("clienteCapex").textContent = cliente.capex || "-";
+    document.getElementById("clienteCidade").textContent = cliente.cidade || "-";
+    document.getElementById("clienteEstado").textContent = cliente.estado || "-";
+    document.getElementById("clienteCep").textContent = cliente.cep || "-";
+    document.getElementById("clienteNumero").textContent = cliente.numero || "-";
+    document.getElementById("clienteBairro").textContent = cliente.bairro || "-";
+    document.getElementById("clienteCnpj").textContent = cliente.cnpj || "-";
+
+    // Projetos
+    const listaProjetos = document.getElementById("listaProjetos");
+    listaProjetos.innerHTML = "";
+
+    if (cliente.projetos && cliente.projetos.length > 0) {
+      let i = 1;
+      cliente.projetos.forEach(p => {
+        
+        const li = document.createElement("li");
+        li.classList.add("list-group-item");
+
+        // Cria um link clicável
+        const link = document.createElement("a");
+        link.href = `/system/cliente/${clienteId}/${p.id}`;
+        link.textContent = p.name || `Rev #${i} - Status: ${p.status}`;
+        link.classList.add("text-decoration-none");
+
+        li.appendChild(link);
+        listaProjetos.appendChild(li);
+        i++;
+      });
+    } else {
+      const li = document.createElement("li");
+      li.classList.add("list-group-item", "text-muted");
+      li.textContent = "Nenhum projeto cadastrado.";
+      listaProjetos.appendChild(li);
+    }
+
+  } catch (err) {
+    console.error("Erro ao carregar cliente:", err);
+  }
+});
+
+</script>
+{% endblock %}

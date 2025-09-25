@@ -1,0 +1,164 @@
+<!-- Input readonly com botão lado a lado -->
+<div class="d-flex align-items-center gap-2 mb-3">
+  <input type="text" id="filtroStatus" placeholder="Selecione um status" class="form-control" readonly style="height: 45px;">
+  
+  <!-- Botão para abrir modal -->
+  <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalStatus"  style="width: 250px; height: 45px;">
+    Selecionar Status
+  </button>
+</div>
+
+<!-- Modal de unidade (ou outro componente) -->
+<div class="d-flex gap-2 mb-3">
+  {% include 'components/unidade_modal.html' %}
+</div>
+
+<!-- Modal -->
+<div class="modal fade" id="modalStatus" tabindex="-1" aria-labelledby="modalStatusLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-primary">
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title" id="modalStatusLabel">Selecionar Status</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fechar"></button>
+      </div>
+      <div class="modal-body">
+        <ul class="list-group" id="listaStatus"></ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+
+<!-- Botão buscar -->
+<button class="btn btn-primary mt-2" onclick="getProjectsByStatus(status_filtered)">
+  Buscar
+</button>
+
+
+
+
+<!-- Tabela de projetos -->
+<div id="projectsTable" class="table-responsive mt-3"></div>
+
+<script>
+  const statusList = {{ status_list | tojson }};
+  const statusInputId = "filtroStatus";
+  let status_filtered = null;
+
+
+  function formatarData(isoString) {
+    const data = new Date(isoString);
+
+    const dia = String(data.getDate()).padStart(2, "0");
+    const mes = String(data.getMonth() + 1).padStart(2, "0"); // mês começa do 0
+    const ano = data.getFullYear();
+
+    const horas = String(data.getHours()).padStart(2, "0");
+    const minutos = String(data.getMinutes()).padStart(2, "0");
+
+    return `${dia}/${mes}/${ano} ${horas}:${minutos}`;
+  }
+
+
+  // Função para carregar status no modal
+  function carregarStatusModal() {
+    const lista = document.getElementById("listaStatus");
+    lista.innerHTML = "";
+
+    statusList.forEach(status => {
+      const li = document.createElement("li");
+      li.className = "list-group-item list-group-item-action";
+      li.style.cursor = "pointer";
+      li.textContent = status;
+
+      li.addEventListener("click", () => {
+        document.getElementById(statusInputId).value = status;
+        status_filtered = status;
+        bootstrap.Modal.getInstance(document.getElementById("modalStatus")).hide();
+      });
+
+      lista.appendChild(li);
+    });
+  }
+
+  document.getElementById("modalStatus").addEventListener("show.bs.modal", carregarStatusModal);
+
+  // Função para buscar projetos por status
+  function getProjectsByStatus(status) {
+    // let url = status ? `/api/projetos?status=${status}` : `/api/projetos`;   para API
+    let url = status ? `/table_component/projetos?status=${status}` :  `/table_component/projetos`;
+    if (window.unidade_filtered && window.unidade_filtered.length > 0) {
+      const unidades = window.unidade_filtered
+        .map(u => `unidade=${encodeURIComponent(u)}`)
+        .join('&');
+      url += url.includes('?') ? `&${unidades}` : `?${unidades}`;
+    }
+
+    window.url_query = url;
+
+    console.log(url)
+
+  //   fetch(url)
+  //     .then(res => res.json())
+  //     .then(data => {
+  //       console.log(data)
+  //       //renderProjectsTable(data);
+        
+  //     })
+  //     .catch(err => console.error("Erro ao buscar projetos:", err));
+   }
+
+  // Função para renderizar tabela
+function renderProjectsTable(projects) {
+  const container = document.getElementById("projectsTable");
+
+  if (!projects.length) {
+    container.innerHTML = `<p class="text-center mt-2">Nenhum projeto encontrado.</p>`;
+    return;
+  }
+
+  let tableHTML = `
+    <table class="table table-striped table-bordered">
+      <thead class="table-primary">
+        <tr>
+          <th>ID</th>
+          <th>Cliente ID</th>
+          <th>Cliente</th>
+          <th>Unidade</th>
+          <th>Solicitação</th>
+          <th>Prazo</th>
+          <th>Status</th>
+          <th>Desenhista</th>
+          <th>Revisor</th>
+          <th>Data Início</th>
+          <th>Data Final</th>
+          <th>ART</th>
+        </tr>
+      </thead>
+      <tbody>
+  `;
+
+  projects.forEach(p => {
+    tableHTML += `
+      <tr>
+        <td>${p.id}</td>
+        <td>${p.cliente_id}</td>
+        <td>${p.cliente ? p.cliente.name : ""}</td>
+        <td>${p.cliente ? p.cliente.unidade : ""}</td>
+        <td>${p.solicitacao || ""}</td>
+        <td>${p.prazo || ""}</td>
+        <td>${p.status || ""}</td>
+        <td>${p.desenhista || ""}</td>
+        <td>${p.revisor || ""}</td>
+        <td>${formatarData(p.timestamp_inicio) || ""}</td>
+        <td>${formatarData(p.timestamp_final) || ""}</td>
+        <td>${p.art ? "Sim" : "Não"}</td>
+      </tr>
+    `;
+  });
+
+  tableHTML += `</tbody></table>`;
+  container.innerHTML = tableHTML;
+}
+</script>

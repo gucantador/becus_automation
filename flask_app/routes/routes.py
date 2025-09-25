@@ -1,8 +1,11 @@
-from flask import jsonify, request, render_template_string, render_template
+from flask import jsonify, request, render_template_string, render_template, session, redirect, url_for
 import os
 from gdrive_auto.drive_auto import upload_file, create_folder
 import re
 import uuid
+from flask_app import db
+from flask_app.models import User
+
 
 def get_app():
     from flask_app import app
@@ -168,3 +171,52 @@ def parse_drive_id(drive_url_or_id: str) -> str:
 
     # Caso já seja só o ID
     return drive_url_or_id if re.match(r"^[a-zA-Z0-9_-]+$", drive_url_or_id) else None
+
+
+@app.route("/login", methods=["GET", "POST"])
+def login():
+    if request.method == "POST":
+        name = request.form.get("name")
+        password = request.form.get("password")
+
+        user = User.query.filter_by(name=name).first()
+
+        if user and user.password == password:  # senha em texto puro por enquanto
+            # salva os dados do usuário na session
+            session["user_id"] = user.id
+            session["user_name"] = user.name
+            session["user_role"] = user.role
+
+            return redirect(url_for("index"))  # ou qualquer página inicial
+        else:
+            error = "Usuário ou senha incorretos"
+            return render_template("login.html", error=error)
+
+    return render_template("login.html")
+
+
+
+@app.route("/register", methods=["GET", "POST"])
+def register():
+    if request.method == "POST":
+        name = request.form.get("name")
+        last_name = request.form.get("last_name")
+        role = request.form.get("role")
+        password = request.form.get("password")
+
+        if not name or not password:
+            return render_template("register.html", error="Nome e senha são obrigatórios")
+
+        # Cria hash da senha antes de salvar
+        # password_hashed = generate_password_hash(password)  # opcional, mas recomendado
+        user = User(name=name, last_name=last_name, role=role, password=password)
+
+        try:
+            db.session.add(user)
+            db.session.commit()
+            return redirect(url_for("login"))
+        except Exception as e:
+            db.session.rollback()
+            return render_template("register.html", error=f"Erro ao cadastrar: {str(e)}")
+
+    return render_template("register.html")

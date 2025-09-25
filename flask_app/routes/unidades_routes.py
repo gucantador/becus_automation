@@ -1,6 +1,8 @@
 from flask import jsonify, request
 from ..models import db, Unidades
 
+from ..utils import  Status
+
 
 def get_app():
     from flask_app import app
@@ -92,3 +94,10 @@ def populate_unidades():
 def get_all_unidades():
     unidades = Unidades.query.all()
     return jsonify([u.to_dict() for u in unidades])
+
+
+
+@app.route("/get_all_status", methods=["GET"])
+def get_all_status():
+    status_list = [status.value for status in Status]
+    return jsonify(status_list)

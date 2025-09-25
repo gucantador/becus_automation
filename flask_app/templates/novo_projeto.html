@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+
+  <!-- Header -->
+  <div class="row mb-4">
+    <div class="col text-center">
+      <h2 class="text-success">Novo Projeto</h2>
+    </div>
+  </div>
+
+  <!-- Formulário de Novo Projeto -->
+  <div class="row justify-content-center">
+    <div class="col-md-8">
+      <div class="card border-success">
+        <div class="card-header bg-success text-white">
+          Criar Projeto
+        </div>
+        <div class="card-body">
+          <form id="formNovoProjeto">
+            <div class="mb-3">
+              <label for="solicitacao" class="form-label">Solicitação *</label>
+              <input type="text" class="form-control" id="solicitacao" required>
+            </div>
+
+            <div class="mb-3">
+              <label for="visita" class="form-label">Visita</label>
+              <input type="text" class="form-control" id="visita">
+            </div>
+
+            <div class="mb-3">
+              <label for="desenhista" class="form-label">Desenhista</label>
+              <input type="text" class="form-control" id="desenhista">
+            </div>
+
+            <div class="mb-3">
+              <label for="revisor" class="form-label">Revisor</label>
+              <input type="text" class="form-control" id="revisor">
+            </div>
+
+            <div class="mb-3">
+              <label for="data_entrega" class="form-label">Data de Entrega</label>
+              <input type="date" class="form-control" id="data_entrega">
+            </div>
+
+            <div class="form-check mb-3">
+              <input type="checkbox" class="form-check-input" id="art">
+              <label class="form-check-label" for="art">Possui ART?</label>
+            </div>
+
+            <input type="hidden" id="cliente_id" value="{{ client_id }}">
+
+            <button type="submit" class="btn btn-success">Salvar</button>
+            <a href="{{ url_for('get_cliente', cliente_id=client_id) }}" class="btn btn-secondary">Cancelar</a>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+document.getElementById("formNovoProjeto").addEventListener("submit", async (e) => {
+  e.preventDefault();
+
+  const data = {
+    solicitacao: document.getElementById("solicitacao").value,
+    visita: document.getElementById("visita").value || null,
+    desenhista: document.getElementById("desenhista").value || null,
+    revisor: document.getElementById("revisor").value || null,
+    data_entrega: document.getElementById("data_entrega").value || null,
+    art: document.getElementById("art").checked,
+    cliente_id: document.getElementById("cliente_id").value,
+    user_id: "{{ session['user_id'] }}"
+  };
+
+  try {
+    const response = await fetch("/projetos", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data)
+    });
+
+    if (response.ok) {
+      const result = await response.json();
+      alert("Projeto criado com sucesso!");
+      window.location.href = `/clientes/${data.cliente_id}`;
+    } else {
+      const err = await response.json();
+      alert("Erro: " + err.error);
+    }
+  } catch (err) {
+    console.error("Erro ao criar projeto:", err);
+    alert("Erro ao criar projeto.");
+  }
+});
+</script>
+{% endblock %}
