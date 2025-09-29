@@ -1,0 +1,49 @@
+<!-- Botão para abrir o modal -->
+<button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalUnidades" style="width: 250px; height: 45px;">
+  Selecionar filtros
+</button>
+
+<!-- Modal -->
+<div class="modal fade" id="modalUnidades" tabindex="-1" aria-labelledby="modalUnidadesLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-primary">
+      <div class="modal-header bg-primary text-white" >
+        <h5 class="modal-title" id="modalUnidadesLabel">Selecionar Filtros</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fechar" ></button>
+      </div>
+      <div class="modal-body">
+        <ul class="list-group" id="listaUnidades">
+          <li class="list-group-item">{% include 'components/filtros_components/unidades_filtro.html' %}</li>
+          <li class="list-group-item">{% with status_list=status_list %}
+                                        {% include 'components/filtros_components/status_filtro.html' %}
+                                      {% endwith %}
+                                      </li>
+          <li class="list-group-item">{% include 'components/filtros_components/tanques_filtro.html' %}</li>
+          <li class="list-group-item">{% include 'components/filtros_components/desenhistas_filtro.html' %}</li>
+          <li class="list-group-item">{% include 'components/filtros_components/revisores_filtro.html' %}</li>
+          
+        </ul>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-success" id="btnSelecionarUnidades">Selecionar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Script opcional (não necessário se usar data-bs-toggle, mas funciona) -->
+<script>
+  // Seleciona o botão
+
+  window.urlString = "http://192.168.0.122:5000/table_component/projetos";
+  const btnAbrirModal = document.querySelector('[data-bs-target="#modalUnidades"]');
+  
+  // Seleciona o modal
+  const modalElement = document.getElementById('modalUnidades');
+  const modal = new bootstrap.Modal(modalElement);
+
+  // Abre o modal ao clicar
+  btnAbrirModal.addEventListener('click', () => {
+    modal.show();
+  });
+</script>

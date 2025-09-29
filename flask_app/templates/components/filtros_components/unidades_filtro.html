@@ -1,0 +1,72 @@
+<!-- Botão para expandir/recolher -->
+<button class="btn btn-outline-primary mb-2" type="button" data-bs-toggle="collapse" data-bs-target="#collapseUnidades" aria-expanded="false" aria-controls="collapseUnidades">
+  Unidades
+</button>
+
+<!-- Lista expansível -->
+<div class="collapse" id="collapseUnidades">
+  <ul id="listaUnidades_lista" class="list-group mt-2">
+    <!-- Os itens vão ser adicionados pelo JS -->
+  </ul>
+</div>
+
+
+
+
+<script>
+async function carregarUnidades() {
+    try {
+        const response = await fetch("/unidades");
+        const data = await response.json();
+
+        const lista = document.getElementById("listaUnidades_lista");
+        lista.innerHTML = ""; // limpa a lista antes de adicionar
+
+
+        data.forEach(unidade => {
+            const li = document.createElement("li");
+            li.classList.add("list-group-item", "d-flex", "align-items-center");
+
+            li.innerHTML = `
+                <input type="checkbox" class="form-check-input me-2 unidade-check" value="${unidade.name}">
+                ${unidade.name}
+            `;
+
+            lista.appendChild(li);
+        });
+    } catch (error) {
+        console.error("Erro ao carregar unidades:", error);
+    }
+}
+
+
+function checkedBox() {
+    // Pega todos os checkboxes marcados
+    const selecionados = Array.from(document.querySelectorAll('.unidade-check:checked'))
+                              .map(checkbox => checkbox.value);
+
+    if (!window.urlString.includes('?')) {
+        window.urlString += '?'; 
+    }
+
+    // Adiciona apenas os selecionados
+    selecionados.forEach(item => {
+        if (window.urlString.endsWith('?')) {
+            window.urlString += `unidade=${encodeURIComponent(item)}`;
+        } else
+        window.urlString += `&unidade=${encodeURIComponent(item)}`;
+    });
+
+    console.log("URL String atualizada:", window.urlString);
+}
+
+
+
+
+window.addEventListener('change', checkedBox);
+
+
+// Chama a função para carregar unidades assim que a página carregar
+window.addEventListener("DOMContentLoaded", carregarUnidades);
+
+</script>

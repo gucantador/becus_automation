@@ -1,0 +1,61 @@
+<!-- Botão para expandir/recolher -->
+<button class="btn btn-outline-primary mb-2" type="button" data-bs-toggle="collapse" data-bs-target="#collapseStatus" aria-expanded="false" aria-controls="collapseStatus">
+  Status
+</button>
+
+<!-- Lista expansível -->
+<div class="collapse" id="collapseStatus">
+  <ul id="listaStatus_lista" class="list-group mt-2">
+    <!-- Os itens vão ser adicionados pelo JS -->
+  </ul>
+</div>
+
+<script>
+async function carregarstatus() {
+    const statusList = {{ status_list | tojson }};
+
+
+    try {
+        const lista = document.getElementById("listaStatus_lista");
+        lista.innerHTML = ""; // limpa a lista antes de adicionar
+
+        statusList.forEach(status => {
+            const li = document.createElement("li");
+            li.classList.add("list-group-item", "d-flex", "align-items-center");
+
+            li.innerHTML = `
+                <input type="checkbox" class="form-check-input me-2 status-check" value="${status}">
+                ${status}
+            `;
+
+            lista.appendChild(li);
+        });
+    } catch (error) {
+        console.error("Erro ao carregar status:", error);
+    }
+}
+
+function checkedBox() {
+    // Pega todos os checkboxes marcados
+    const selecionados = Array.from(document.querySelectorAll('.status-check:checked'))
+                              .map(checkbox => checkbox.value);
+
+    // Monta a URL base + query string só com os selecionados
+    const baseUrl = window.location.origin + window.location.pathname;
+    const query = selecionados.map(item => `status=${encodeURIComponent(item)}`).join("&");
+
+    window.urlString = query ? `${baseUrl}?${query}` : baseUrl;
+
+    console.log("URL String atualizada:", window.urlString);
+}
+
+// Carrega a lista ao abrir a página
+window.addEventListener("DOMContentLoaded", carregarstatus);
+
+// Atualiza a URL quando algum checkbox mudar
+document.addEventListener("change", (e) => {
+    if (e.target.classList.contains("status-check")) {
+        checkedBox();
+    }
+});
+</script>

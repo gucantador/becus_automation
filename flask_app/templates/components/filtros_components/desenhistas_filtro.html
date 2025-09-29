@@ -1,0 +1,70 @@
+<!-- Botão para expandir/recolher -->
+<button class="btn btn-outline-primary mb-2" type="button" data-bs-toggle="collapse" data-bs-target="#collapsedesenhista" aria-expanded="false" aria-controls="collapsedesenhista">
+  desenhista
+</button>
+
+<!-- Lista expansível -->
+<div class="collapse" id="collapsedesenhista">
+  <ul id="listadesenhista_lista" class="list-group mt-2">
+    <!-- Os itens vão ser adicionados pelo JS -->
+  </ul>
+</div>
+
+<script>
+async function carregardesenhista() {
+    
+
+
+    try {
+        const response = await fetch("/get_users");
+        const data = await response.json();
+
+        const lista = document.getElementById("listadesenhista_lista");
+        lista.innerHTML = ""; // limpa a lista antes de adicionar
+
+
+
+        data.users.forEach(desenhista => {
+            console.log(desenhista.name)
+            
+            const li = document.createElement("li");
+            li.classList.add("list-group-item", "d-flex", "align-items-center");
+
+            li.innerHTML = `
+                    <input type="checkbox" class="form-check-input me-2 desenhista-check" 
+                    value="${desenhista.name} ${desenhista.last_name}">
+                    ${desenhista.name} ${desenhista.last_name}
+                    `;
+
+
+            lista.appendChild(li);
+        });
+    } catch (error) {
+        console.error("Erro ao carregar desenhista:", error);
+    }
+}
+
+function checkedBox() {
+    // Pega todos os checkboxes marcados
+    const selecionados = Array.from(document.querySelectorAll('.desenhista-check:checked'))
+                              .map(checkbox => checkbox.value);
+
+    // Monta a URL base + query string só com os selecionados
+    const baseUrl = window.location.origin + window.location.pathname;
+    const query = selecionados.map(item => `desenhista=${encodeURIComponent(item)}`).join("&");
+
+    window.urlString = query ? `${baseUrl}?${query}` : baseUrl;
+
+    console.log("URL String atualizada:", window.urlString);
+}
+
+// Carrega a lista ao abrir a página
+window.addEventListener("DOMContentLoaded", carregardesenhista);
+
+// Atualiza a URL quando algum checkbox mudar
+document.addEventListener("change", (e) => {
+    if (e.target.classList.contains("desenhista-check")) {
+        checkedBox();
+    }
+});
+</script>

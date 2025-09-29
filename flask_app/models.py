@@ -52,14 +52,14 @@ class Cliente(db.Model):
 
 class Projeto(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    solicitacao = db.Column(db.String(255), nullable=False)
-    prazo = db.Column(db.String(255), nullable=False)
-    visita = db.Column(db.String(255), nullable=True)
+    solicitacao = db.Column(db.Date, nullable=False)
+    prazo = db.Column(db.Date, nullable=False)
+    visita = db.Column(db.Date, nullable=True)
     desenhista = db.Column(db.String(100), nullable=True)
     timestamp_inicio = db.Column(db.DateTime, default=datetime.utcnow, nullable=True)
     timestamp_final = db.Column(db.DateTime, nullable=True)
     revisor = db.Column(db.String(100), nullable=True)
-    data_entrega = db.Column(db.String(255), nullable=True)
+    data_entrega = db.Column(db.Date, nullable=False)
     art = db.Column(db.Boolean, nullable=True)
     status = db.Column(db.String(50), nullable=True)
 
@@ -76,14 +76,14 @@ class Projeto(db.Model):
     def to_dict(self, include_cliente=True, include_history=False, include_correcoes=True, include_observacoes=True):
         data = {
             "id": self.id,
-            "solicitacao": self.solicitacao,
-            "prazo": self.prazo if self.prazo else None,
-            "visita": self.visita if self.visita else None,
+            "solicitacao": self.solicitacao,   # string normal
+            "prazo": self.prazo.isoformat() if self.prazo else None,   # Date -> string ISO
+            "visita": self.visita,  # string normal
             "desenhista": self.desenhista,
             "timestamp_inicio": self.timestamp_inicio.isoformat() if self.timestamp_inicio else None,
             "timestamp_final": self.timestamp_final.isoformat() if self.timestamp_final else None,
             "revisor": self.revisor,
-            "data_entrega": self.data_entrega if self.data_entrega else None,
+            "data_entrega": self.data_entrega.isoformat() if self.data_entrega else None,  # Date -> string ISO
             "art": self.art,
             "status": self.status,
             "cliente_id": self.cliente_id,
@@ -105,6 +105,7 @@ class User(db.Model):
     last_name = db.Column(db.String(100))
     role = db.Column(db.String(50))
     password = db.Column(db.String(255), nullable=False)
+    username = db.Column(db.String(255), nullable=False)
 
     def __repr__(self):
         return f"<User {self.name} {self.last_name or ''} ({self.id})>"
@@ -115,7 +116,8 @@ class User(db.Model):
             "name": self.name,
             "last_name": self.last_name,
             "role": self.role,
-            "password": self.password
+            "password": self.password,
+            "username": self.username
         }
         if include_history:
             data["history"] = [h.to_dict() for h in self.history]

@@ -176,15 +176,15 @@ def parse_drive_id(drive_url_or_id: str) -> str:
 @app.route("/login", methods=["GET", "POST"])
 def login():
     if request.method == "POST":
-        name = request.form.get("name")
+        name = request.form.get("username")
         password = request.form.get("password")
 
-        user = User.query.filter_by(name=name).first()
+        user = User.query.filter_by(username=name).first()
 
         if user and user.password == password:  # senha em texto puro por enquanto
             # salva os dados do usuário na session
             session["user_id"] = user.id
-            session["user_name"] = user.name
+            session["user_name"] = user.username
             session["user_role"] = user.role
 
             return redirect(url_for("index"))  # ou qualquer página inicial
@@ -203,13 +203,14 @@ def register():
         last_name = request.form.get("last_name")
         role = request.form.get("role")
         password = request.form.get("password")
+        username = request.form.get("username")
 
         if not name or not password:
             return render_template("register.html", error="Nome e senha são obrigatórios")
 
         # Cria hash da senha antes de salvar
         # password_hashed = generate_password_hash(password)  # opcional, mas recomendado
-        user = User(name=name, last_name=last_name, role=role, password=password)
+        user = User(name=name, last_name=last_name, role=role, password=password, username=username)
 
         try:
             db.session.add(user)
@@ -220,3 +221,13 @@ def register():
             return render_template("register.html", error=f"Erro ao cadastrar: {str(e)}")
 
     return render_template("register.html")
+
+
+@app.route("/get_users", methods=["GET"])
+def get_users():
+    try:
+        users = User.query.all()
+        users_data = [u.to_dict(include_history=False) for u in users]
+        return jsonify({"success": True, "users": users_data}), 200
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500

@@ -1,34 +1,45 @@
 {% extends "base.html" %}
 {% block content %}
 
-{% include 'components/modal_status.html' %}
+{% with status_list=status_list %}
+{% include 'components/filtros.html' %}
+{% endwith %} 
 
+
+
+
+
+
+<!-- 
 <div class="container mt-4">
   <button class="btn btn-primary" onclick="carregarTabela()">Carregar Projetos</button>
   <div id="tabelaContainer" class="mt-3"></div>
-</div>
+</div> -->
+
+
+
 
 <script>
-  async function carregarTabela() {
-    try {
-      const res = await fetch(window.url_query || '/table_component/projetos');
-      if (!res.ok) throw new Error("Erro na requisição");
+  // async function carregarTabela() {
+  //   try {
+  //     const res = await fetch(window.url_query || '/table_component/projetos');
+  //     if (!res.ok) throw new Error("Erro na requisição");
 
-      const new_html = await res.text();
+  //     const new_html = await res.text();
 
-      // adiciona sem apagar o que já existe
-      const container = document.getElementById("tabelaContainer");
-      const wrapper = document.createElement("div");
-      wrapper.classList.add("mb-4"); // espaço entre as tabelas
-      wrapper.innerHTML = new_html;
+  //     // adiciona sem apagar o que já existe
+  //     const container = document.getElementById("tabelaContainer");
+  //     const wrapper = document.createElement("div");
+  //     wrapper.classList.add("mb-4"); // espaço entre as tabelas
+  //     wrapper.innerHTML = new_html;
 
-      container.appendChild(wrapper);
-    } catch (err) {
-      console.error(err);
-      document.getElementById("tabelaContainer").innerHTML +=
-        `<p class="text-danger">Erro ao carregar tabela.</p>`;
-    }
-  }
+  //     container.appendChild(wrapper);
+  //   } catch (err) {
+  //     console.error(err);
+  //     document.getElementById("tabelaContainer").innerHTML +=
+  //       `<p class="text-danger">Erro ao carregar tabela.</p>`;
+  //   }
+  // }
 </script>
 
 {% endblock %}
