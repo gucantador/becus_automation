@@ -1,6 +1,7 @@
 from flask import jsonify, request
 from ..models import db, Projeto, Observacao, Correcao, Cliente
 from ..utils import prazo, Status, Actions
+from datetime import date, timedelta, datetime
 
 
 def get_app():
@@ -16,7 +17,13 @@ app = get_app()
 @app.route("/projetos", methods=["POST"])
 def create_projeto():
     data = request.get_json()
-    prazo_entrega = prazo(data.get('solicitacao'), 4).strftime("%d/%m/%Y")
+    prazo_entrega = prazo(data.get('solicitacao'), 4)
+    print(type(prazo_entrega))
+
+    if isinstance(data["solicitacao"], str):
+        solicitacao = datetime.strptime(data["solicitacao"], "%d/%m/%Y").date()
+
+
     if data.get("status") is None:
         data["status"] = Status.AGENDAR.value
         
@@ -24,7 +31,7 @@ def create_projeto():
 
     try:
         projeto = Projeto(
-            solicitacao=data["solicitacao"],
+            solicitacao=solicitacao,
             prazo=prazo_entrega,
             visita=data.get("visita"),
             desenhista=data.get("desenhista"),
@@ -293,4 +300,52 @@ def get_projetos():
                 query = query.filter(column_attr == value)
 
     projetos = query.all()
+    return jsonify([p.to_dict() for p in projetos])
+
+
+
+@app.route("/api/projetos_by_date_solicitacao", methods=["GET"])
+def get_projetos_by_date_solicitacao():
+    filters = request.args
+
+    data_inicial = filters.get('data_inicial', None)
+    data_final = filters.get('data_final', None)
+
+
+
+    filters = []
+    if data_inicial:
+        data_inicial = datetime.strptime(data_inicial, "%d/%m/%Y").date()
+        filters.append(Projeto.solicitacao >= data_inicial)
+    if data_final:
+        data_final = datetime.strptime(data_final, "%d/%m/%Y").date()
+        filters.append(Projeto.solicitacao <= data_final)
+
+    projetos = Projeto.query.filter(*filters).all()
+
+
+
+    return jsonify([p.to_dict() for p in projetos])
+
+
+
+@app.route("/api/projetos_by_date_prazo", methods=["GET"])
+def get_projetos_by_date_prazo():
+    filters = request.args
+
+    data_inicial = filters.get('data_inicial', None)
+    data_final = filters.get('data_final', None)
+
+    filters = []
+    if data_inicial:
+        data_inicial = datetime.strptime(data_inicial, "%d/%m/%Y").date()
+        filters.append(Projeto.solicitacao >= data_inicial)
+    if data_final:
+        data_final = datetime.strptime(data_final, "%d/%m/%Y").date()
+        filters.append(Projeto.solicitacao <= data_final)
+
+    projetos = Projeto.query.filter(*filters).all()
+
+
+
     return jsonify([p.to_dict() for p in projetos])

@@ -59,7 +59,7 @@ class Projeto(db.Model):
     timestamp_inicio = db.Column(db.DateTime, default=datetime.utcnow, nullable=True)
     timestamp_final = db.Column(db.DateTime, nullable=True)
     revisor = db.Column(db.String(100), nullable=True)
-    data_entrega = db.Column(db.Date, nullable=False)
+    data_entrega = db.Column(db.Date, nullable=True)
     art = db.Column(db.Boolean, nullable=True)
     status = db.Column(db.String(50), nullable=True)
 

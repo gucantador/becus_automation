@@ -51,29 +51,37 @@ async function carregartanque() {
 }
 
 function checkedBox() {
-
     // Pega todos os checkboxes marcados
     const selecionados = Array.from(document.querySelectorAll('.tanque-check:checked'))
                               .map(checkbox => checkbox.value);
 
-    // Monta a URL base + query string só com os selecionados
-    const baseUrl = window.location.origin + window.location.pathname;
-    const query = selecionados.map(item => `tanque=${encodeURIComponent(item)}`).join("&");
 
-    window.urlString = query ? `${baseUrl}?${query}` : baseUrl;
+    if (!window.urlString.includes('?')) {
+        window.urlString += '?'; 
+    }
+
+
+    console.log("url no component de tanques:" + urlString)
+    
+
+    // Adiciona apenas os selecionados
+    selecionados.forEach(item => {
+        if (window.urlString.endsWith('?')) {
+            window.urlString += `tanque=${encodeURIComponent(item)}`;
+        } else {
+            window.urlString += `&tanque=${encodeURIComponent(item)}`;
+        }
+    });
 
     console.log("URL String atualizada:", window.urlString);
 }
 
 // Carrega a lista ao abrir a página
-window.addEventListener("DOMContentLoaded", carregartanque);
+window.addEventListener('change', checkedBox);
 
-// Atualiza a URL quando algum checkbox mudar
-document.addEventListener("change", (e) => {
-    if (e.target.classList.contains("tanque-check")) {
-        checkedBox();
-    }
-});
+
+// Chama a função para carregar unidades assim que a página carregar
+window.addEventListener("DOMContentLoaded", carregartanque);
 </script>
 
 

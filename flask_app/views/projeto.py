@@ -102,3 +102,5 @@ def get_projetos_result(request):
 
 
     return [projeto for projeto in projetos]
+
+

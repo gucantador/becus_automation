@@ -1,0 +1,39 @@
+<!-- Botão para expandir/recolher -->
+<button class="btn btn-outline-primary mb-2" type="button" data-bs-toggle="collapse" data-bs-target="#collapsedata" aria-expanded="false" aria-controls="collapsedata">
+  Datas
+</button>
+
+<!-- Lista expansível -->
+<div class="collapse" id="collapsedata">
+  <div class="d-flex flex-column mt-2">
+    <label>Data Inicial:</label>
+    <input type="date" id="data_inicial" class="form-control mb-2">
+
+    <label>Data Final:</label>
+    <input type="date" id="data_final" class="form-control">
+  </div>
+</div>
+
+<script>
+function checkedBoxDatas() {
+    const baseUrl = window.location.origin + window.location.pathname;
+
+    const dataInicial = document.getElementById("data_inicial")?.value;
+    const dataFinal = document.getElementById("data_final")?.value;
+
+    let query = [];
+    if (dataInicial) query.push(`data_inicial=${encodeURIComponent(dataInicial)}`);
+    if (dataFinal) query.push(`data_final=${encodeURIComponent(dataFinal)}`);
+
+    window.urlString = query.length ? `${baseUrl}?${query.join("&")}` : baseUrl;
+
+    console.log("URL String atualizada:", window.urlString);
+}
+
+// Atualiza a URL quando algum input de data mudar
+document.addEventListener("change", (e) => {
+    if (e.target.id === "data_inicial" || e.target.id === "data_final") {
+        checkedBoxDatas();
+    }
+});
+</script>
