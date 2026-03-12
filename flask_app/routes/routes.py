@@ -1,6 +1,6 @@
 from flask import jsonify, request, render_template_string, render_template
 import os
-from gdrive_auto.drive_auto import upload_file, create_folder
+from gdrive_auto.drive_auto import upload_file, create_folder, append_upload_report, build_folder_snapshot
 import re
 import uuid
 
@@ -115,6 +115,11 @@ PARENT_FOLDER_ID = None
 #     </html>
 #     """
 
+
+
+    
+
+
 @app.route("/")
 def index():
     drive_id = request.args.get("drive_id")  # pega da query string
@@ -123,22 +128,53 @@ def index():
 
 @app.route("/upload-file", methods=["POST"])
 def upload_file_endpoint():
+
     file = request.files.get("file")
+
     parent_folder_id = request.form.get("parent_folder_id", PARENT_FOLDER_ID)
     parent_folder_id = parse_drive_id(parent_folder_id) if parent_folder_id else None
+
+    comment = request.form.get("comment", "")
 
     if not file:
         return jsonify({"error": "Nenhum arquivo enviado"}), 400
 
-
     uuid_name = f"{uuid.uuid4()}_{file.filename}"
     temp_path = os.path.join(UPLOAD_TEMP_DIR, uuid_name)
     file.save(temp_path)
+
     try:
-        file_id = upload_file(temp_path, file_name=file.filename, parent_folder_id=parent_folder_id)
-        
+
+        # 1️⃣ snapshot BEFORE
+        before_snapshot = None
+        if parent_folder_id:
+            before_snapshot = build_folder_snapshot(parent_folder_id)
+
+        # 2️⃣ upload
+        file_id = upload_file(
+            temp_path,
+            file_name=file.filename,
+            parent_folder_id=parent_folder_id
+        )
+
+        # 3️⃣ registrar no report
+        if parent_folder_id:
+
+            uploaded_files = [{
+                "name": file.filename,
+                "id": file_id
+            }]
+
+            append_upload_report(
+                parent_folder_id,
+                uploaded_files,
+                before_snapshot,
+                comment=comment
+            )
+
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
     finally:
         if os.path.exists(temp_path):
             os.remove(temp_path)

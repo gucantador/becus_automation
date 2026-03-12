@@ -15,11 +15,165 @@ from google.auth.transport.requests import Request
 import os
 import re
 
+import uuid
+from datetime import datetime
+
 
 
 # API scope
 SCOPES = ['https://www.googleapis.com/auth/drive']
 
+
+import io
+import json
+from datetime import datetime
+from googleapiclient.http import MediaIoBaseUpload, MediaIoBaseDownload
+
+def retry(func):
+    """Simple retry decorator for API operations."""
+    def wrapper(*args, **kwargs):
+        max_attempts = 3
+        delay = 2
+        for attempt in range(max_attempts):
+            try:
+                return func(*args, **kwargs)
+            except HttpError as e:
+                print(f"⚠️ Attempt {attempt+1} failed: {e}")
+                if attempt == max_attempts - 1:
+                    raise
+                time.sleep(delay)
+            except Exception as e:
+                print(f"⚠️ Unexpected error: {e}")
+                if attempt == max_attempts - 1:
+                    raise
+                time.sleep(delay)
+    return wrapper
+
+@retry
+def get_or_create_upload_report(folder_id):
+    """
+    Procura um report.json dentro da pasta.
+    Se não existir, cria um novo.
+    """
+    service = get_drive_service()
+
+    query = f"name = 'report.json' and '{folder_id}' in parents and trashed = false"
+
+    results = service.files().list(
+        q=query,
+        fields="files(id, name)",
+        pageSize=1
+    ).execute()
+
+    files = results.get("files", [])
+
+    if files:
+        return files[0]["id"]
+
+    # cria arquivo vazio
+    metadata = {
+        "name": "report.json",
+        "parents": [folder_id],
+        "mimeType": "application/json"
+    }
+
+    initial_data = json.dumps({"uploads": []}).encode()
+
+    media = MediaIoBaseUpload(io.BytesIO(initial_data), mimetype="application/json")
+
+    file = service.files().create(
+        body=metadata,
+        media_body=media,
+        fields="id"
+    ).execute()
+
+    print("📄 report.json criado")
+
+    return file["id"]
+
+
+def build_folder_snapshot(folder_id):
+
+    items = list_folder_contents(folder_id)
+
+    files = []
+    subfolders = []
+
+    for item in items:
+
+        if item["mimeType"] == "application/vnd.google-apps.folder":
+
+            sub_items = list_folder_contents(item["id"])
+
+            sub_files = [
+                {"name": f["name"], "id": f["id"]}
+                for f in sub_items
+                if f["mimeType"] != "application/vnd.google-apps.folder"]
+            
+            subfolders.append({
+                "name": item["name"],
+                "id": item["id"],
+                "files": sub_files
+            })
+
+        else:
+            files.append({
+                "name": item["name"],
+                "id": item["id"]
+            })
+
+    return {
+        "files": files,
+        "subfolders": subfolders
+    }
+
+
+@retry
+def append_upload_report(folder_id, uploaded_files, before_snapshot, comment=""):
+
+    service = get_drive_service()
+
+    report_id = get_or_create_upload_report(folder_id)
+
+    request = service.files().get_media(fileId=report_id)
+    fh = io.BytesIO()
+
+    downloader = MediaIoBaseDownload(fh, request)
+
+    done = False
+    while not done:
+        status, done = downloader.next_chunk()
+
+    fh.seek(0)
+
+    try:
+        data = json.load(fh)
+    except:
+        data = {"uploads": []}
+
+    after_snapshot = build_folder_snapshot(folder_id)
+
+    new_record = {
+        "upload_id": str(uuid.uuid4()),
+        "timestamp": datetime.now().isoformat(),
+        "comment": comment,
+        "uploaded_files": uploaded_files,
+        "before_snapshot": before_snapshot,
+        "after_snapshot": after_snapshot
+    }
+
+    data["uploads"].append(new_record)
+
+    updated = io.BytesIO(json.dumps(data, indent=2).encode())
+
+    media = MediaIoBaseUpload(updated, mimetype="application/json")
+
+    service.files().update(
+        fileId=report_id,
+        media_body=media
+    ).execute()
+
+    print("📝 Upload registrado com snapshot")
 
 
 def get_drive_service():
@@ -41,25 +195,7 @@ def get_drive_service():
 
     return build("drive", "v3", credentials=creds)
 
-def retry(func):
-    """Simple retry decorator for API operations."""
-    def wrapper(*args, **kwargs):
-        max_attempts = 3
-        delay = 2
-        for attempt in range(max_attempts):
-            try:
-                return func(*args, **kwargs)
-            except HttpError as e:
-                print(f"⚠️ Attempt {attempt+1} failed: {e}")
-                if attempt == max_attempts - 1:
-                    raise
-                time.sleep(delay)
-            except Exception as e:
-                print(f"⚠️ Unexpected error: {e}")
-                if attempt == max_attempts - 1:
-                    raise
-                time.sleep(delay)
-    return wrapper
+
 
 # === Create a folder on Google Drive ===
 @retry

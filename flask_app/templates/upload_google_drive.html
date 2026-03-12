@@ -53,6 +53,8 @@
                 <input type="file" name="file" multiple required><br>
                 <input type="text" name="parent_folder_id" placeholder="Cole o link/ID da pasta"
        value="{{ param or '' }}">
+
+                <input type="text" name="comment" placeholder="Comentário do upload">
                 <button type="submit">Enviar</button>
             </form>
             <div id="status"></div>
@@ -64,20 +66,24 @@
 
                 const files = e.target.file.files;
                 const parentFolder = e.target.parent_folder_id.value.trim();
+                const comment = e.target.comment.value.trim();
                 const statusDiv = document.getElementById("status");
 
                 statusDiv.innerHTML = "⏳ Enviando arquivos...<br>";
 
                 for (let i = 0; i < files.length; i++) {
+
                     const formData = new FormData();
                     formData.append("file", files[i]);
                     formData.append("parent_folder_id", parentFolder);
+                    formData.append("comment", comment);
 
                     try {
                         const res = await fetch("/upload-file", {
                             method: "POST",
                             body: formData
                         });
+
                         const data = await res.json();
 
                         if (data.success) {
@@ -85,6 +91,7 @@
                         } else {
                             statusDiv.innerHTML += `❌ Erro ao enviar ${files[i].name}: ${data.error}<br>`;
                         }
+
                     } catch (err) {
                         statusDiv.innerHTML += `⚠️ Falha de rede ao enviar ${files[i].name}<br>`;
                     }
